@@ -13,7 +13,7 @@ from faiss import IndexFlatL2
 # ------------------------
 # Gemini API Configuration
 # ------------------------
-GENI_API_KEY = "AIzaSyCgCcrekPoayfH8Wm8b9prXskaAs4Wsa2M"  # Replace with your key
+GENI_API_KEY = st.secrets["GENI_API_KEY"]
 genai.configure(api_key=GENI_API_KEY)
 
 # ------------------------
