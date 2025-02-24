@@ -1,0 +1,8 @@
+streamlit
+google-generativeai
+pyttsx3
+SpeechRecognition
+langchain_community
+sentence-transformers
+numpy
+faiss-cpu
