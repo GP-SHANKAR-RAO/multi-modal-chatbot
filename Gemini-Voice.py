@@ -5,7 +5,7 @@ import google.generativeai as genai
 import threading
 
 # Configure Gemini API
-genai.configure(api_key="AIzaSyCgCcrekPoayfH8Wm8b9prXskaAs4Wsa2M")
+genai.configure(api_key="")
 
 # Initialize text-to-speech engine
 engine = pyttsx3.init()
