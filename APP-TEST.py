@@ -9,16 +9,18 @@ from sentence_transformers import SentenceTransformer
 from langchain_community.docstore.in_memory import InMemoryDocstore
 import numpy as np
 from faiss import IndexFlatL2
+from gtts import gTTS
+
 
 # ------------------------
 # Gemini API Configuration
-# ------------------------
+# ------------------------streamlit run APP-TEST.py
 GENI_API_KEY = ""  # Replace with your key
 genai.configure(api_key=GENI_API_KEY)
 
 # ------------------------
 # Initialize Voice Components
-# ------------------------streamlit run APP-TEST.py
+# ------------------------streamlit run Application.py
 engine = pyttsx3.init()
 recognizer = sr.Recognizer()
 
@@ -61,28 +63,17 @@ def query_gemini_model(query, retriever):
     try:
         # Retrieve similar chunks from the PDF document
         results = retriever.vectorstore.similarity_search(query, k=3)
-        context_chunks = []
-        for doc, _ in results:
-            try:
-                doc_id = int(doc.metadata['doc_id'])
-                # Get the corresponding docstore id safely
-                docstore_id = retriever.vectorstore.index_to_docstore_id.get(doc_id)
-                if not docstore_id:
-                    continue
-                chunk = retriever.vectorstore.docstore._dict.get(docstore_id)
-                if chunk:
-                    context_chunks.append(chunk)
-            except Exception:
-                # Optionally log the error internally without showing it to the user
-                continue
-        context = "\n".join(context_chunks)
+        context = "\n".join([
+            retriever.vectorstore.docstore._dict[
+                retriever.vectorstore.index_to_docstore_id[int(doc.metadata['doc_id'])]
+            ]
+            for doc, _ in results
+        ])
         genai_model = genai.GenerativeModel("gemini-1.5-pro")
         response = genai_model.generate_content(f"Context: {context}\nQuestion: {query}")
         return response.text
-    except Exception:
-        # Return a generic error message without exposing internal error details
-        return "Answer: An error occurred while processing your request"
-
+    except Exception as e:
+        return f"Answer: {e}"
 
 
 # ------------------------
@@ -102,10 +93,9 @@ def process_voice_input():
 
 
 def speak_text(text):
-    # Save the TTS output to a file and return its path.
+    tts = gTTS(text=text, lang='en')
     output_file = "response.mp3"
-    engine.save_to_file(text, output_file)
-    engine.runAndWait()
+    tts.save(output_file)
     return output_file
 
 
