@@ -11,19 +11,16 @@ import numpy as np
 from faiss import IndexFlatL2
 from gtts import gTTS
 
-
 # ------------------------
 # Gemini API Configuration
-# ------------------------streamlit run APP-TEST.py
+# ------------------------
 GENI_API_KEY = ""  # Replace with your key
 genai.configure(api_key=GENI_API_KEY)
 
 # ------------------------
 # Initialize Voice Components
-# ------------------------streamlit run Application.py
-engine = pyttsx3.init()
+# ------------------------
 recognizer = sr.Recognizer()
-
 
 # ------------------------
 # RAG-based Chatbot Functions
@@ -36,8 +33,12 @@ def load_and_preprocess_pdf(file_path):
         chunk_overlap=200  # Overlap for context
     )
     chunks = text_splitter.split_documents(documents)
+    # Add metadata 'doc_id' to each chunk for lookup
+    for i, chunk in enumerate(chunks):
+        if not hasattr(chunk, 'metadata') or not chunk.metadata:
+            chunk.metadata = {}
+        chunk.metadata['doc_id'] = str(i)
     return chunks
-
 
 def create_vector_index(doc_chunks):
     model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -58,7 +59,6 @@ def create_vector_index(doc_chunks):
     )
     return vector_store
 
-
 def query_gemini_model(query, retriever):
     try:
         # Retrieve similar chunks from the PDF document
@@ -75,7 +75,6 @@ def query_gemini_model(query, retriever):
     except Exception as e:
         return f"Answer: {e}"
 
-
 # ------------------------
 # Voice-based Functions
 # ------------------------
@@ -91,13 +90,20 @@ def process_voice_input():
             st.write(f"Voice recognition error: {e}")
             return None
 
-
 def speak_text(text):
-    tts = gTTS(text=text, lang='en')
     output_file = "response.mp3"
-    tts.save(output_file)
-    return output_file
-
+    try:
+        # Try to use pyttsx3 for text-to-speech
+        engine = pyttsx3.init()
+        engine.save_to_file(text, output_file)
+        engine.runAndWait()
+        return output_file
+    except Exception as e:
+        # If pyttsx3 fails (e.g., eSpeak missing), fall back to gTTS
+        print(f"pyttsx3 error: {e}. Falling back to gTTS.")
+        tts = gTTS(text=text, lang='en')
+        tts.save(output_file)
+        return output_file
 
 # ------------------------
 # Streamlit UI
@@ -115,8 +121,6 @@ if mode == "Text Chat":
         doc_chunks = load_and_preprocess_pdf(file_path)
         vector_index = create_vector_index(doc_chunks)
         return vector_index
-
-
     vector_index = load_vector_index()
 
 if mode == "Text Chat":
@@ -138,4 +142,3 @@ elif mode == "Voice Chat":
             # Convert response text to speech and play the audio
             audio_file = speak_text(response_text)
             st.audio(audio_file)
-
