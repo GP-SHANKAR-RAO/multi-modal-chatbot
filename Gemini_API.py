@@ -4,7 +4,7 @@ import pyttsx3
 import speech_recognition as sr
 
 # Configure Gemini API
-genai.configure(api_key="AIzaSyCgCcrekPoayfH8Wm8b9prXskaAs4Wsa2M")
+genai.configure(api_key="")
 
 # Initialize text-to-speech engine
 engine = pyttsx3.init()
