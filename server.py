@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import google.generativeai as genai
 
 # Configure Gemini API
-genai.configure(api_key="AIzaSyCgCcrekPoayfH8Wm8b9prXskaAs4Wsa2M")
+genai.configure(api_key="")
 
 app = Flask(__name__)
 
