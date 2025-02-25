@@ -2,10 +2,12 @@ streamlit
 google-generativeai
 pyttsx3
 SpeechRecognition
+pypdf
 langchain_community
 sentence-transformers
 numpy
 faiss-cpu
 gTTS
-pypdf
+streamlit-audiorecorder
+
 
