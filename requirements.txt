@@ -8,4 +8,3 @@ sentence-transformers
 numpy
 faiss-cpu
 gTTS
-streamlit-audiorecorder
