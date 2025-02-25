@@ -9,7 +9,3 @@ numpy
 faiss-cpu
 gTTS
 streamlit-audiorecorder
-git+https://github.com/okld/streamlit-audiorecorder.git
-
-
-
