@@ -10,8 +10,6 @@ from langchain_community.docstore.in_memory import InMemoryDocstore
 import numpy as np
 from faiss import IndexFlatL2
 from gtts import gTTS
-import tempfile
-from streamlit_audiorecorder import audiorecorder
 
 # ------------------------
 # Gemini API Configuration
@@ -21,9 +19,8 @@ GENI_API_KEY = st.secrets["GENI_API_KEY"]
 genai.configure(api_key=GENI_API_KEY)
 
 # ------------------------
-# Initialize Speech Recognition
+# Initialize Voice Components
 # ------------------------
-# (No need for microphone access via PyAudio on Cloud)
 recognizer = sr.Recognizer()
 
 # ------------------------
@@ -34,7 +31,7 @@ def load_and_preprocess_pdf(file_path):
     documents = loader.load()
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,  # Chunk size for splitting text
-        chunk_overlap=200   # Overlap for context
+        chunk_overlap=200  # Overlap for context
     )
     chunks = text_splitter.split_documents(documents)
     # Add metadata 'doc_id' to each chunk for lookup
@@ -79,6 +76,21 @@ def query_gemini_model(query, retriever):
     except Exception as e:
         return f"Answer: {e}"
 
+# ------------------------
+# Voice-based Functions
+# ------------------------
+def process_voice_input():
+    with sr.Microphone() as source:
+        st.write("Listening...")
+        audio = recognizer.listen(source)
+        try:
+            user_input = recognizer.recognize_google(audio)
+            st.write(f"You said: {user_input}")
+            return user_input
+        except Exception as e:
+            st.write(f"Voice recognition error: {e}")
+            return None
+
 def speak_text(text):
     output_file = "response.mp3"
     try:
@@ -95,31 +107,6 @@ def speak_text(text):
         return output_file
 
 # ------------------------
-# Modified Voice-based Functions Using Browser Recorder
-# ------------------------
-def process_voice_input():
-    st.write("Record your message below:")
-    # Use streamlit-audiorecorder for browser-based recording
-    audio_bytes = audiorecorder("Click to record", "Recording...")
-    if audio_bytes is not None:
-        # Save the recorded audio to a temporary WAV file
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-            tmp.write(audio_bytes)
-            tmp_path = tmp.name
-        try:
-            # Process the temporary file with SpeechRecognition
-            with sr.AudioFile(tmp_path) as source:
-                audio_data = recognizer.record(source)
-                user_input = recognizer.recognize_google(audio_data)
-            st.write(f"You said: {user_input}")
-            return user_input
-        except Exception as e:
-            st.write(f"Voice recognition error: {e}")
-            return None
-    else:
-        return None
-
-# ------------------------
 # Streamlit UI
 # ------------------------
 st.title("Multi-Modal Chatbot Application")
@@ -127,6 +114,7 @@ st.title("Multi-Modal Chatbot Application")
 # Let the user choose the mode
 mode = st.radio("Select Chat Mode", ("Text Chat", "Voice Chat"))
 
+# For text chat, we load the PDF vector index.
 if mode == "Text Chat":
     @st.cache(allow_output_mutation=True)
     def load_vector_index():
@@ -136,6 +124,7 @@ if mode == "Text Chat":
         return vector_index
     vector_index = load_vector_index()
 
+if mode == "Text Chat":
     user_query = st.text_input("Enter your message:")
     if st.button("Send"):
         if user_query:
@@ -150,6 +139,7 @@ elif mode == "Voice Chat":
             response = genai_model.generate_content(user_input)
             response_text = response.text
             st.write("Bot:", response_text)
+
             # Convert response text to speech and play the audio
             audio_file = speak_text(response_text)
             st.audio(audio_file)
